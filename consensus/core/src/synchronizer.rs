@@ -1188,7 +1188,10 @@ impl<C: NetworkClient, V: BlockVerifier, D: CoreThreadDispatcher> Synchronizer<C
         let num_peers = authorities
             .len()
             .div_ceil((context.committee.size() - 1).div_ceil(MAX_PERIODIC_SYNC_PEERS));
+        // I assume num_peers is 2 at this point
+        
         let num_authorities_per_peer = authorities.len().div_ceil(num_peers);
+        // I assume num_authorities_per_peer is 2 at this point
 
         // Update metrics related to missing blocks.
         let mut missing_blocks_per_authority = vec![0; context.committee.size()];
@@ -1237,8 +1240,17 @@ impl<C: NetworkClient, V: BlockVerifier, D: CoreThreadDispatcher> Synchronizer<C
             authorities.shuffle(&mut ThreadRng::default());
         }
 
+        warn!(
+            ?num_authorities_per_peer,
+            peers_len = ?peers.len(),
+            ?num_peers,
+            authorities_len = ?authorities.len(),
+        );
+        
         // Send the fetch requests
         for batch in authorities.chunks(num_authorities_per_peer) {
+            // panic occurs here
+            // peers length should be 4
             let peer = peers
                 .next()
                 .expect("Possible misconfiguration as a peer should be found");
