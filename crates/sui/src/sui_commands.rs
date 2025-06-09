@@ -989,21 +989,31 @@ async fn start(
     }
 
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(3));
-    let mut unhealthy_cnt = 0;
+    // let mut unhealthy_cnt = 0;
+    let mut i = 0;
     loop {
-        for node in swarm.validator_nodes() {
-            if let Err(err) = node.health_check(true).await {
-                unhealthy_cnt += 1;
-                if unhealthy_cnt > 3 {
-                    // The network could temporarily go down during reconfiguration.
-                    // If we detect a failed validator 3 times in a row, give up.
-                    return Err(err.into());
-                }
-                // Break the inner loop so that we could retry latter.
-                break;
-            } else {
-                unhealthy_cnt = 0;
+        i += 1;
+        for (node_index, node) in swarm.validator_nodes().enumerate() {
+            if i == 200 && (node_index == 0 || node_index == 1) {
+                node.stop();
             }
+            if i == 205 && node_index == 0 {
+                node.start().await?;
+            }
+            // This is a hack to make sure that the first node is healthy before we start
+            // checking the rest of the nodes.
+            // if let Err(err) = node.health_check(true).await {
+            //     unhealthy_cnt += 1;
+            //     if unhealthy_cnt > 3 {
+            //         // The network could temporarily go down during reconfiguration.
+            //         // If we detect a failed validator 3 times in a row, give up.
+            //         return Err(err.into());
+            //     }
+            //     // Break the inner loop so that we could retry latter.
+            //     break;
+            // } else {
+            //     unhealthy_cnt = 0;
+            // }
         }
 
         interval.tick().await;
