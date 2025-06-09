@@ -1188,10 +1188,8 @@ impl<C: NetworkClient, V: BlockVerifier, D: CoreThreadDispatcher> Synchronizer<C
         let num_peers = authorities
             .len()
             .div_ceil((context.committee.size() - 1).div_ceil(MAX_PERIODIC_SYNC_PEERS));
-        // I assume num_peers is 2 at this point
         
         let num_authorities_per_peer = authorities.len().div_ceil(num_peers);
-        // I assume num_authorities_per_peer is 2 at this point
 
         // Update metrics related to missing blocks.
         let mut missing_blocks_per_authority = vec![0; context.committee.size()];
