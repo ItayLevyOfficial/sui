@@ -64,7 +64,7 @@ use sui_swarm_config::node_config_builder::FullnodeConfigBuilder;
 use sui_types::base_types::SuiAddress;
 use sui_types::crypto::{SignatureScheme, SuiKeyPair, ToFromBytes};
 use tracing;
-use tracing::info;
+use tracing::{info, warn};
 
 const DEFAULT_EPOCH_DURATION_MS: u64 = 60_000;
 
@@ -984,8 +984,9 @@ async fn start(
             faucet: local_faucet,
             config,
         });
-
-        start_faucet(app_state).await?;
+        tokio::spawn(async move {
+            let _ = start_faucet(app_state).await;
+        });
     }
 
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(3));
@@ -995,9 +996,11 @@ async fn start(
         i += 1;
         for (node_index, node) in swarm.validator_nodes().enumerate() {
             if i == 200 && (node_index == 0 || node_index == 1) {
+                warn!("Stopping node {}", node_index);
                 node.stop();
             }
             if i == 205 && node_index == 0 {
+                warn!("Restarting node {}", node_index);
                 node.start().await?;
             }
             // This is a hack to make sure that the first node is healthy before we start
